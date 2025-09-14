@@ -1,142 +1,141 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../api";
 
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
-
-function AdminCourses() {
+export default function AdminCourses() {
   const [courses, setCourses] = useState([]);
-  const [formData, setFormData] = useState({ name: "", description: "" });
-  const [editingCourse, setEditingCourse] = useState(null);
-  const token = localStorage.getItem("token");
-
-  // Fetch courses
-  const fetchCourses = async () => {
-    try {
-      const res = await axios.get(`${API_URL}/courses`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setCourses(res.data);
-    } catch (err) {
-      console.error("Error fetching courses:", err);
-    }
-  };
+  const [form, setForm] = useState({ name: "", description: "" });
+  const [editing, setEditing] = useState(null);
+  const [msg, setMsg] = useState("");
+  const [error, setError] = useState("");
 
   useEffect(() => {
     fetchCourses();
-    // eslint-disable-next-line
   }, []);
 
-  // Handle input
+  async function fetchCourses() {
+    try {
+      setError("");
+      const res = await api.get("/courses");
+      setCourses(res.data);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to fetch courses");
+    }
+  }
+
   const handleChange = (e) => {
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  // Add or Update course
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      if (editingCourse) {
-        // Update existing
-        await axios.put(`${API_URL}/courses/${editingCourse._id}`, formData, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+      if (editing) {
+        await api.put(`/courses/${editing._id}`, form);
+        setMsg("Course updated successfully");
       } else {
-        // Create new
-        await axios.post(`${API_URL}/courses`, formData, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        await api.post("/courses", form);
+        setMsg("Course added successfully");
       }
-      setFormData({ name: "", description: "" });
-      setEditingCourse(null);
+      setForm({ name: "", description: "" });
+      setEditing(null);
       fetchCourses();
     } catch (err) {
-      console.error("Error saving course:", err);
+      console.error(err);
+      setError("Failed to save course");
     }
   };
 
-  // Edit course
   const handleEdit = (course) => {
-    setEditingCourse(course);
-    setFormData({ name: course.name, description: course.description });
+    setEditing(course);
+    setForm({ name: course.name, description: course.description });
   };
 
-  // Delete course
   const handleDelete = async (id) => {
+    if (!confirm("Delete course?")) return;
     try {
-      await axios.delete(`${API_URL}/courses/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await api.delete(`/courses/${id}`);
       fetchCourses();
+      setMsg("Course deleted");
     } catch (err) {
-      console.error("Error deleting course:", err);
+      console.error(err);
+      setError("Failed to delete course");
     }
   };
 
   return (
-    <div className="container mt-4">
-      <h2>Manage Courses</h2>
+    <div className="p-6 max-w-4xl mx-auto bg-white rounded-lg shadow-md space-y-6">
+      <h2 className="text-2xl font-semibold mb-4">Manage Courses</h2>
 
-      {/* Add/Edit form */}
-      <form onSubmit={handleSubmit} className="mb-3">
+      {msg && <p className="text-green-600">{msg}</p>}
+      {error && <p className="text-red-600">{error}</p>}
+
+      {/* Add/Edit Form */}
+      <form onSubmit={handleSubmit} className="space-y-2">
         <input
           type="text"
           name="name"
-          placeholder="Course name"
-          value={formData.name}
+          placeholder="Course Name"
+          value={form.name}
           onChange={handleChange}
           required
-          className="form-control mb-2"
+          className="w-full border rounded px-3 py-2"
         />
         <input
           type="text"
           name="description"
-          placeholder="Course description"
-          value={formData.description}
+          placeholder="Course Description"
+          value={form.description}
           onChange={handleChange}
-          className="form-control mb-2"
+          className="w-full border rounded px-3 py-2"
         />
-        <button type="submit" className="btn btn-primary">
-          {editingCourse ? "Update Course" : "Add Course"}
-        </button>
-        {editingCourse && (
+        <div className="space-x-2">
           <button
-            type="button"
-            className="btn btn-secondary ms-2"
-            onClick={() => {
-              setEditingCourse(null);
-              setFormData({ name: "", description: "" });
-            }}
+            type="submit"
+            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
           >
-            Cancel
+            {editing ? "Update Course" : "Add Course"}
           </button>
-        )}
+          {editing && (
+            <button
+              type="button"
+              onClick={() => {
+                setEditing(null);
+                setForm({ name: "", description: "" });
+              }}
+              className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+            >
+              Cancel
+            </button>
+          )}
+        </div>
       </form>
 
-      {/* Course list */}
-      <table className="table table-bordered">
+      {/* Course List */}
+      <table className="w-full border-collapse border mt-4">
         <thead>
-          <tr>
-            <th>Name</th>
-            <th>Description</th>
-            <th>Actions</th>
+          <tr className="bg-gray-100">
+            <th className="border px-4 py-2">Name</th>
+            <th className="border px-4 py-2">Description</th>
+            <th className="border px-4 py-2">Actions</th>
           </tr>
         </thead>
         <tbody>
           {courses.length > 0 ? (
-            courses.map((course) => (
-              <tr key={course._id}>
-                <td>{course.name}</td>
-                <td>{course.description}</td>
-                <td>
+            courses.map((c) => (
+              <tr key={c._id}>
+                <td className="border px-4 py-2">{c.name}</td>
+                <td className="border px-4 py-2">{c.description}</td>
+                <td className="border px-4 py-2 space-x-2">
                   <button
-                    className="btn btn-warning btn-sm me-2"
-                    onClick={() => handleEdit(course)}
+                    className="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600"
+                    onClick={() => handleEdit(c)}
                   >
                     Edit
                   </button>
                   <button
-                    className="btn btn-danger btn-sm"
-                    onClick={() => handleDelete(course._id)}
+                    className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
+                    onClick={() => handleDelete(c._id)}
                   >
                     Delete
                   </button>
@@ -145,7 +144,9 @@ function AdminCourses() {
             ))
           ) : (
             <tr>
-              <td colSpan="3">No courses found.</td>
+              <td colSpan="3" className="border px-4 py-2 text-center">
+                No courses found.
+              </td>
             </tr>
           )}
         </tbody>
@@ -153,5 +154,3 @@ function AdminCourses() {
     </div>
   );
 }
-
-export default AdminCourses;
