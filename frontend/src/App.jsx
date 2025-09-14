@@ -1,31 +1,36 @@
-import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import Signup from './pages/Signup'; // <- Check this
-import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import MyFeedback from './pages/MyFeedback';
-import Profile from './pages/Profile';
-import AdminDashboard from './pages/AdminDashboard';
-import AdminCourses from './pages/AdminCourses';
-import Navbar from './components/Navbar';
-import PrivateRoute from './components/PrivateRoute';
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import Dashboard from "./pages/Dashboard";
+import Profile from "./pages/Profile";
+import MyFeedback from "./pages/MyFeedback";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminCourse from "./pages/AdminCourse";
+
+// Simulated Auth + Role
+const isAuthenticated = true;   
+const userRole = "admin";       
 
 export default function App() {
   return (
-    <>
-      <Navbar />
-      <div className="container">
-        <Routes>
-          <Route path="/" element={<Navigate to="/dashboard" />} />
-          <Route path="/Signup" element={<Signup />} />
-          <Route path="/Login" element={<Login />} />
-          <Route path="/Dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
-          <Route path="/MyFeedback" element={<PrivateRoute><MyFeedback /></PrivateRoute>} />
-          <Route path="/Profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
-          <Route path="/Admin" element={<PrivateRoute><AdminDashboard /></PrivateRoute>} />
-          <Route path="/Admin/courses" element={<PrivateRoute><AdminCourses /></PrivateRoute>} />
-        </Routes>
-      </div>
-    </>
+    <Router>
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+
+        {/* Student Routes */}
+        <Route path="/dashboard" element={isAuthenticated && userRole === "student" ? <Dashboard /> : <Navigate to="/login" />} />
+        <Route path="/profile" element={isAuthenticated && userRole === "student" ? <Profile /> : <Navigate to="/login" />} />
+        <Route path="/myfeedback" element={isAuthenticated && userRole === "student" ? <MyFeedback /> : <Navigate to="/login" />} />
+
+        {/* Admin Routes */}
+        <Route path="/admin/dashboard" element={isAuthenticated && userRole === "admin" ? <AdminDashboard /> : <Navigate to="/login" />} />
+        <Route path="/admin/courses" element={isAuthenticated && userRole === "admin" ? <AdminCourse /> : <Navigate to="/login" />} />
+
+        {/* Default Redirect */}
+        <Route path="*" element={<Navigate to="/login" />} />
+      </Routes>
+    </Router>
   );
 }
