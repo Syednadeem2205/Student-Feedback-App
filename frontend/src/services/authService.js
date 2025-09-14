@@ -1,7 +1,9 @@
-import api from "../api";
+import api from '../api';
 
-export const signup = (data) => api.post("/auth/signup", data);
+// Authentication
+export const login = (credentials) => api.post('/auth/login', credentials);
+export const signup = (data) => api.post('/auth/signup', data);
+export const changePassword = (data) => api.post('/auth/change-password', data);
 
-export const login = (data) => api.post("/auth/login", data);
-
-export const getProfile = () => api.get("/auth/profile");
+// Optional: get current user profile
+export const getProfile = () => api.get('/users/me');
