@@ -1,6 +1,6 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import Signup from './pages/Signup';
+import Signup from './pages/SignUp';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import MyFeedback from './pages/MyFeedback';
@@ -29,3 +29,4 @@ export default function App() {
     </>
   );
 }
+
