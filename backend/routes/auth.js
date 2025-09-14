@@ -5,6 +5,8 @@ const { body, validationResult } = require('express-validator');
 const router = express.Router();
 const User = require('../models/User');
 const { isValidPassword } = require('../utils/validators');
+const { isValidPassword, isValidEmail } = require('../utils/validators');
+
 
 // signup
 router.post('/signup',
@@ -64,3 +66,4 @@ router.post('/change-password', auth, async (req,res)=>{
 });
 
 module.exports = router;
+
