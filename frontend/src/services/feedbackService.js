@@ -1,7 +1,13 @@
-import api from "../api";
+import api from '../api';
 
-export const submitFeedback = (data) => api.post("/feedback", data);
+// Submit new feedback
+export const submitFeedback = (data) => api.post('/feedback', data);
 
-export const getFeedbacks = () => api.get("/feedback");
+// Get all feedbacks (or optionally /mine for current user)
+export const getFeedbacks = () => api.get('/feedback');
 
+// Delete a feedback by ID
 export const deleteFeedback = (id) => api.delete(`/feedback/${id}`);
+
+// Optional: fetch feedbacks of the current user
+export const getMyFeedbacks = () => api.get('/feedback/mine');
