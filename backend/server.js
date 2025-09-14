@@ -12,30 +12,34 @@ dotenv.config();
 
 const app = express();
 
-// --- Middleware ---
+// --- CORS ---
+app.use(cors({
+  origin: [
+    "https://studentfeedbackappv1-34f0891g2-syed-nadeem-ahmeds-projects.vercel.app", // your frontend (Vercel)
+    "http://localhost:5173" // optional, for local dev
+  ],
+  credentials: true
+}));
 
+// --- Middleware ---
 // Security headers
 app.use(helmet());
 
-// Enable CORS for all routes
-app.use(cors());
-
-// Body parser to handle JSON data with a size limit
+// Body parser
 app.use(express.json({ limit: '5mb' }));
 
-// Rate limiting for authentication routes to prevent brute-force attacks
+// Rate limiting for authentication routes
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 50, // max 50 requests per IP per windowMs
+  windowMs: 15 * 60 * 1000,
+  max: 50,
   message: 'Too many login attempts from this IP, please try again after 15 minutes.',
 });
 app.use('/api/auth', authLimiter);
 
-// Serve static files (e.g., uploaded images) from the 'uploads' directory
+// Static files
 app.use('/uploads', express.static(path.join(__dirname, process.env.UPLOAD_DIR || 'uploads')));
 
 // --- Database Connection ---
-
 const connectDB = async () => {
   try {
     await mongoose.connect(process.env.MONGO_URI, {
@@ -45,17 +49,12 @@ const connectDB = async () => {
     console.log('MongoDB Connected successfully!');
   } catch (err) {
     console.error(`MongoDB connection error: ${err.message}`);
-    // Exit the process if the database connection fails
     process.exit(1);
   }
 };
-
-// Connect to the database
 connectDB();
 
 // --- Routes ---
-
-// The order of these is not critical, but grouping them is good practice
 app.use('/api/courses', require('./routes/courses'));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/users', require('./routes/users'));
@@ -63,14 +62,11 @@ app.use('/api/feedback', require('./routes/feedback'));
 app.use('/api/admin', require('./routes/admin'));
 
 // --- Error Handling ---
-
-// A global error handler to catch unhandled errors
 app.use((err, req, res, next) => {
-  console.error(err.stack); // Log the full error stack for debugging
+  console.error(err.stack);
   res.status(500).json({ msg: 'Server error' });
 });
 
 // --- Server Startup ---
-
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
