@@ -38,11 +38,7 @@ A full-stack MERN application where students can sign up, log in, submit course 
 
 ## Steps to Run Locally
 
-### 1. Clone the Repository
-```bash
-git clone https://github.com/your-username/student-feedback-app.git
-cd student-feedback-app
-````
+### 1. Clone this Repository
 
 ### 2. Backend Setup
 
@@ -145,9 +141,3 @@ If this account is not seeded, you can insert it manually in MongoDB with role s
 
 1. Deploy the backend folder.
 2. Add all `.env` values (`MONGO_URI`, `JWT_SECRET`, Cloudinary keys) in the hosting platform’s environment variables settings.
-
-```
-
----
-Would you like me to also **add a "Project Structure" section** (showing `/backend`, `/frontend`, `/models`, `/routes`, etc.) so your evaluator instantly sees how your repo is organized?
-```
