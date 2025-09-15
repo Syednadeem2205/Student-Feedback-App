@@ -1,158 +1,67 @@
-import React, { useState, useEffect } from "react";
-import api from "../api";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { login } from "../services/authService";
 
-export default function Profile() {
-  const [user, setUser] = useState(null);
-  const [form, setForm] = useState({});
-  const [pw, setPw] = useState({ currentPassword: "", newPassword: "" });
-  const [msg, setMsg] = useState("");
+export default function Login() {
+  const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    load();
-  }, []);
+  // Handle input change
+  const handleChange = (e) => {
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
 
-  async function load() {
-    try {
-      const res = await api.get("/users/me");
-      setUser(res.data);
-      setForm({
-        name: res.data.name,
-        phone: res.data.phone || "",
-        dob: res.data.dob || "",
-        address: res.data.address || "",
-      });
-    } catch (err) {
-      setError("Failed to load profile");
-    }
-  }
-
-  async function save(e) {
+  // Handle login form submission
+  const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await api.put("/users/me", form);
-      setMsg("Profile saved");
-      load();
+      setError("");
+      const res = await login(form);
+
+      // Store token and user info
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
+
+      // Redirect based on role
+      if (res.data.user.role === "admin") navigate("/admin/dashboard");
+      else navigate("/dashboard");
     } catch (err) {
-      setError(err.response?.data?.msg || "Save failed");
+      console.error(err);
+      setError(err.response?.data?.msg || "Login failed. Please check your credentials.");
     }
-  }
-
-  async function changePassword(e) {
-    e.preventDefault();
-    try {
-      await api.post("/auth/change-password", pw);
-      setMsg("Password changed");
-      setPw({ currentPassword: "", newPassword: "" });
-    } catch (err) {
-      setError(err.response?.data?.msg || "Password change failed");
-    }
-  }
-
-  async function uploadAvatar(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    const fd = new FormData();
-    fd.append("avatar", file);
-
-    try {
-      await api.post("/users/me/avatar", fd, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      setMsg("Avatar uploaded");
-      load();
-    } catch (err) {
-      setError(err.response?.data?.msg || "Upload failed");
-    }
-  }
-
-  if (!user) return <p>Loading...</p>;
+  };
 
   return (
-    <div className="p-6 max-w-2xl mx-auto bg-white rounded-lg shadow-md">
-      <h2 className="text-2xl font-semibold mb-4">Profile</h2>
-
-      {msg && <p className="text-green-600">{msg}</p>}
-      {error && <p className="text-red-600">{error}</p>}
-
-      <form onSubmit={save} className="space-y-3">
+    <div className="max-w-md mx-auto mt-20 p-6 bg-white rounded-lg shadow-md">
+      <h2 className="text-2xl font-semibold mb-4">Login</h2>
+      {error && <p className="text-red-600 mb-2">{error}</p>}
+      <form onSubmit={handleSubmit} className="space-y-4">
         <input
-          value={form.name || ""}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
-          placeholder="Name"
+          type="email"
+          name="email"
+          placeholder="Email"
+          value={form.email}
+          onChange={handleChange}
           required
-          className="w-full border rounded px-3 py-2"
+          className="w-full border px-3 py-2 rounded"
         />
         <input
-          value={user.email}
-          readOnly
-          className="w-full border rounded px-3 py-2 bg-gray-100"
-        />
-        <input
-          value={form.phone || ""}
-          onChange={(e) => setForm({ ...form, phone: e.target.value })}
-          placeholder="Phone"
-          className="w-full border rounded px-3 py-2"
-        />
-        <input
-          type="date"
-          value={form.dob ? form.dob.split("T")[0] : ""}
-          onChange={(e) => setForm({ ...form, dob: e.target.value })}
-          className="w-full border rounded px-3 py-2"
-        />
-        <textarea
-          value={form.address || ""}
-          onChange={(e) => setForm({ ...form, address: e.target.value })}
-          placeholder="Address"
-          className="w-full border rounded px-3 py-2"
+          type="password"
+          name="password"
+          placeholder="Password"
+          value={form.password}
+          onChange={handleChange}
+          required
+          className="w-full border px-3 py-2 rounded"
         />
         <button
           type="submit"
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+          className="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
         >
-          Save
+          Login
         </button>
       </form>
-
-      <div className="mt-6">
-        <h3 className="font-semibold">Change Password</h3>
-        <form onSubmit={changePassword} className="space-y-2 mt-2">
-          <input
-            type="password"
-            placeholder="Current password"
-            value={pw.currentPassword}
-            onChange={(e) =>
-              setPw({ ...pw, currentPassword: e.target.value })
-            }
-            className="w-full border rounded px-3 py-2"
-          />
-          <input
-            type="password"
-            placeholder="New (min 8, 1 num, 1 special)"
-            value={pw.newPassword}
-            onChange={(e) => setPw({ ...pw, newPassword: e.target.value })}
-            className="w-full border rounded px-3 py-2"
-          />
-          <button
-            type="submit"
-            className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600"
-          >
-            Change
-          </button>
-        </form>
-      </div>
-
-      <div className="mt-6">
-        <h3 className="font-semibold">Avatar</h3>
-        <input type="file" onChange={uploadAvatar} />
-        {user.avatarUrl && (
-          <img
-            src={`${import.meta.env.VITE_API_URL}${user.avatarUrl}`}
-            className="mt-2 rounded-full w-24 h-24 object-cover"
-            alt="avatar"
-          />
-        )}
-      </div>
     </div>
   );
 }
