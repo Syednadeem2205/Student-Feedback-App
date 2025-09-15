@@ -1,70 +1,41 @@
 import React, { useEffect, useState } from "react";
-import api from "../api";
+import { getMyFeedbacks, submitFeedback } from "../services/feedbackService";
 
-export default function MyFeedbacks() {
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState("");
+export default function MyFeedback() {
+  const [feedbacks, setFeedbacks] = useState([]);
+  const [form, setForm] = useState({ courseId: "", rating: 5, comment: "" });
 
-  async function load() {
-    setLoading(true);
-    setErr("");
+  useEffect(() => { fetchFeedbacks(); }, []);
+
+  const fetchFeedbacks = async () => {
     try {
-      const res = await api.get("/feedback/mine");
-      setData(res.data.items || []);
-    } catch (error) {
-      setErr(error.response?.data?.msg || "Failed to load feedbacks");
-    }
-    setLoading(false);
-  }
+      const res = await getMyFeedbacks();
+      setFeedbacks(res.data);
+    } catch (err) { console.error(err); }
+  };
 
-  useEffect(() => {
-    load();
-  }, []);
+  const handleChange = e => setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
 
-  async function remove(id) {
-    if (!window.confirm("Delete feedback?")) return;
+  const handleSubmit = async e => {
+    e.preventDefault();
     try {
-      await api.delete(`/feedback/${id}`);
-      load();
-    } catch (error) {
-      alert(error.response?.data?.msg || "Delete failed");
-    }
-  }
+      await submitFeedback(form);
+      setForm({ courseId: "", rating: 5, comment: "" });
+      fetchFeedbacks();
+    } catch (err) { console.error(err); }
+  };
 
   return (
-    <div className="p-6 max-w-3xl mx-auto bg-white rounded-lg shadow-md">
-      <h2 className="text-xl font-semibold mb-4">My Feedbacks</h2>
-
-      {loading && <p>Loading...</p>}
-      {err && <p className="text-red-500">{err}</p>}
-
-      {!loading && !data.length && (
-        <p className="text-gray-500">You haven’t submitted any feedback yet.</p>
-      )}
-
-      <ul className="space-y-4">
-        {data.map((f) => (
-          <li
-            key={f._id}
-            className="p-4 border rounded-lg flex flex-col space-y-2"
-          >
-            <div className="flex justify-between items-center">
-              <strong>{f.course?.name || "Course"}</strong>
-              <span className="text-yellow-500">{f.rating} ⭐</span>
-            </div>
-            <p className="text-gray-700">{f.message}</p>
-            <small className="text-gray-400">
-              {new Date(f.createdAt).toLocaleString()}
-            </small>
-            <button
-              onClick={() => remove(f._id)}
-              className="self-end text-sm bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-            >
-              Delete
-            </button>
-          </li>
-        ))}
+    <div className="p-6 max-w-4xl mx-auto">
+      <h2 className="text-2xl mb-4">My Feedback</h2>
+      <form onSubmit={handleSubmit} className="space-y-2 mb-4">
+        <input type="text" name="courseId" placeholder="Course ID" value={form.courseId} onChange={handleChange} required className="border px-3 py-2 rounded w-full"/>
+        <input type="number" name="rating" value={form.rating} onChange={handleChange} min={1} max={5} className="border px-3 py-2 rounded w-full"/>
+        <textarea name="comment" placeholder="Comment" value={form.comment} onChange={handleChange} className="border px-3 py-2 rounded w-full"/>
+        <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Submit Feedback</button>
+      </form>
+      <ul className="space-y-2">
+        {feedbacks.map(f => <li key={f._id}>{f.courseId} — {f.rating} stars — {f.comment}</li>)}
       </ul>
     </div>
   );
