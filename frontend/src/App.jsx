@@ -7,17 +7,17 @@ import MyFeedback from "./pages/MyFeedback";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminCourse from "./pages/AdminCourse";
 
-// Simulated Auth + Role
-const isAuthenticated = true;   
-const userRole = "admin";       
-
 export default function App() {
+  const token = localStorage.getItem("token");
+  const userRole = JSON.parse(localStorage.getItem("user"))?.role || null;
+  const isAuthenticated = !!token;
+
   return (
     <Router>
       <Routes>
         {/* Public Routes */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
+        <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to={userRole === "admin" ? "/admin/dashboard" : "/dashboard"} />} />
+        <Route path="/signup" element={!isAuthenticated ? <Signup /> : <Navigate to={userRole === "admin" ? "/admin/dashboard" : "/dashboard"} />} />
 
         {/* Student Routes */}
         <Route path="/dashboard" element={isAuthenticated && userRole === "student" ? <Dashboard /> : <Navigate to="/login" />} />
